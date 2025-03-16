@@ -21,7 +21,7 @@ namespace Test_QuocCuong
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
                     DataSet dataSet = reader.AsDataSet();
-                    _excelDataTable = dataSet.Tables[0];
+                    _excelDataTable = dataSet.Tables[3];
                     return _excelDataTable;
                 }
             }
@@ -156,6 +156,41 @@ namespace Test_QuocCuong
             {
                 Console.WriteLine("Lỗi khi đọc file Excel: " + ex.Message);
                 return false;
+            }
+        }
+
+        public static IEnumerable<TestCaseData> GetDataForAddVoucher(int start, int end)
+        {
+            var testCases = new List<TestCaseData>();
+            DataTable excelDataTable = ReadExcel("C:\\Users\\thanh\\source\\repos\\Lab06\\Lab06\\bin\\Debug\\net8.0\\TestCase_BDCLPM_HK2.xlsx");
+            for (int i = start - 1; i < end; i++)
+            {
+                var testData = excelDataTable.Rows[i][4];
+                var exp = excelDataTable.Rows[i][5];
+                testCases.Add(new TestCaseData(testData, exp));
+            }
+            return testCases;
+        }
+        public static int rowIndex = 83;
+        private static int colIndexActual = 7;
+        public static void WriteResultToExcell(string filePath, string sheetName, string actual, string result)
+        {
+            try
+            {
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(filePath)))
+                {
+                    ExcelWorksheet wordsheet = package.Workbook.Worksheets[sheetName] ?? package.Workbook.Worksheets[0];
+
+                    //write value actual in position at rowIndex and colIndex
+                    wordsheet.Cells[rowIndex, colIndexActual].Value = actual;
+                    wordsheet.Cells[rowIndex, colIndexActual + 1].Value = result;
+                    package.Save();
+                    rowIndex++;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
             }
         }
     }
