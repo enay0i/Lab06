@@ -21,7 +21,7 @@ namespace Test_QuocCuong
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
                     DataSet dataSet = reader.AsDataSet();
-                    _excelDataTable = dataSet.Tables[3];
+                    _excelDataTable = dataSet.Tables[0];
                     return _excelDataTable;
                 }
             }
@@ -70,23 +70,22 @@ namespace Test_QuocCuong
                     if (excelData.Rows.Count > i + 1 && excelData.Columns.Count > 1)
                     {
                         object cellValue = excelData.Rows[i + 1][1];
-                        if (cellValue != null && int.TryParse(cellValue.ToString(), out int value))
+                        if (cellValue != null && double.TryParse(cellValue.ToString(), out double value))
                         {
-                            sum += value;
-                            if (i + 1 == currentMonth) currentMonthRevenue = value;
+                            int intValue = (int)value;
+                            sum += intValue;
+                            if (i + 1 == currentMonth) currentMonthRevenue = intValue;
                         }
                     }
                 }
+
                 return sum == expectedTotal && currentMonthRevenue == expectedCurrentMonthRevenue;
             }
-            catch(Exception ex) {
-            
-                Console.WriteLine(ex.Message);
+            catch
+            {
                 return false;
             }
         }
-
-
 
         public static bool ValidateCustomerData(string filePath, string sheetName, int totalRow, string firstCus, string lastCus)
         {
@@ -97,7 +96,8 @@ namespace Test_QuocCuong
                 {
                     return false;
                 }
-                int dataRowCount = excelData.Rows.Count-1;
+
+                int dataRowCount = excelData.Rows.Count - 1;
                 if (dataRowCount != totalRow)
                 {
                     return false;
@@ -106,26 +106,30 @@ namespace Test_QuocCuong
                 if (dataRowCount > 0)
                 {
                     string firstCustomer = excelData.Rows[1][0].ToString().Trim();
+                    Console.WriteLine("khach hang dau tien: " + firstCus + " excel: " + firstCustomer);
                     if (!firstCustomer.Equals(firstCus, StringComparison.OrdinalIgnoreCase))
                     {
                         return false;
                     }
-
+                
                     string lastCustomer = excelData.Rows[dataRowCount - 1][0].ToString().Trim();
+                    Console.WriteLine("khach hang cuoi cung: " + lastCus + " excel: " + lastCustomer);
                     if (!lastCustomer.Equals(lastCus, StringComparison.OrdinalIgnoreCase))
                     {
                         return false;
                     }
+                
                 }
+
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return false;
             }
         }
 
-
+        public static int rowIndex = 0;
         public static bool ValidateEmptyCustomerData(string filePath, string sheetName, string[] expectedCot)
         {
             try
@@ -161,6 +165,7 @@ namespace Test_QuocCuong
 
         public static IEnumerable<TestCaseData> GetDataForAddVoucher(int start, int end)
         {
+            rowIndex = start;
             var testCases = new List<TestCaseData>();
             DataTable excelDataTable = ReadExcel("C:\\Users\\thanh\\source\\repos\\Lab06\\Lab06\\bin\\Debug\\net8.0\\TestCase_BDCLPM_HK2.xlsx");
             for (int i = start - 1; i < end; i++)
@@ -171,7 +176,7 @@ namespace Test_QuocCuong
             }
             return testCases;
         }
-        public static int rowIndex = 83;
+      
         private static int colIndexActual = 7;
         public static void WriteResultToExcell(string filePath, string sheetName, string actual, string result)
         {
@@ -180,8 +185,6 @@ namespace Test_QuocCuong
                 using (ExcelPackage package = new ExcelPackage(new FileInfo(filePath)))
                 {
                     ExcelWorksheet wordsheet = package.Workbook.Worksheets[sheetName] ?? package.Workbook.Worksheets[0];
-
-                    //write value actual in position at rowIndex and colIndex
                     wordsheet.Cells[rowIndex, colIndexActual].Value = actual;
                     wordsheet.Cells[rowIndex, colIndexActual + 1].Value = result;
                     package.Save();
