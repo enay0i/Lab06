@@ -28,6 +28,10 @@ namespace AutomationExerciseTests
             options.AddUserProfilePreference("safebrowsing.enabled", true);
             options.AddUserProfilePreference("credentials_enable_service", false);
             options.AddUserProfilePreference("profile.password_manager_enabled", false);
+            options.AddArgument("--disable-infobars");
+            options.AddArgument("--disable-password-manager-reauthentication");
+            options.AddArgument("--password-store=basic");
+            options.AddArgument("--incognito");
             string filePath = Path.Combine(root, "HoaDon.xlsx");
             string filePathh = Path.Combine(root, "BaoCaoDoanhThu.xlsx");
             driver = new ChromeDriver(options);
