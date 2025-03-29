@@ -21,7 +21,7 @@ namespace Test_QuocCuong
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
                     DataSet dataSet = reader.AsDataSet();
-                    _excelDataTable = dataSet.Tables[0];
+                    _excelDataTable = dataSet.Tables[3];
                     return _excelDataTable;
                 }
             }
@@ -129,7 +129,7 @@ namespace Test_QuocCuong
             }
         }
 
-        public static int rowIndex = 0;
+        public static int rowIndex;
         public static bool ValidateEmptyCustomerData(string filePath, string sheetName, string[] expectedCot)
         {
             try
@@ -176,7 +176,7 @@ namespace Test_QuocCuong
             }
             return testCases;
         }
-      
+
         private static int colIndexActual = 7;
         public static void WriteResultToExcell(string filePath, string sheetName, string actual, string result)
         {
@@ -186,7 +186,9 @@ namespace Test_QuocCuong
                 {
                     ExcelWorksheet wordsheet = package.Workbook.Worksheets[sheetName] ?? package.Workbook.Worksheets[0];
                     wordsheet.Cells[rowIndex, colIndexActual].Value = actual;
+                   
                     wordsheet.Cells[rowIndex, colIndexActual + 1].Value = result;
+                    Console.WriteLine("row index luc ghi " + rowIndex);
                     package.Save();
                     rowIndex++;
                 }
