@@ -10,7 +10,7 @@ namespace Test_QuocCuong
     {
         private static DataTable _excelDataTable;
 
-        public static DataTable ReadExcel(string filePath)
+        public static DataTable ReadExcel(string filePath,int sheet)
         {
             if (_excelDataTable != null)
                 return _excelDataTable;
@@ -21,7 +21,7 @@ namespace Test_QuocCuong
                 using (var reader = ExcelReaderFactory.CreateReader(stream))
                 {
                     DataSet dataSet = reader.AsDataSet();
-                    _excelDataTable = dataSet.Tables[3];
+                    _excelDataTable = dataSet.Tables[sheet];
                     return _excelDataTable;
                 }
             }
@@ -53,12 +53,37 @@ namespace Test_QuocCuong
                 Console.WriteLine("Lỗi khi ghi vào Excel: " + ex.Message);
             }
         }
+        public static void WriteResultToExcelz(string filePath, string sheetName, int rowIndex, string actualResult, string status)
+        {
+            try
+            {
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+                using (ExcelPackage package = new ExcelPackage(new FileInfo(filePath)))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets[sheetName] ?? package.Workbook.Worksheets[0];
 
+                    int colActualResult = 11;
+                    int colStatus = 12;
+
+                    int totalRows = worksheet.Dimension?.Rows ?? 0;
+
+                    worksheet.Cells[rowIndex, colActualResult].Value = actualResult;
+                    worksheet.Cells[rowIndex, colStatus].Value = status;
+
+                    package.Save();
+                    Console.WriteLine($"excel bri");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Lỗi khi ghi vào Excel: " + ex.Message);
+            }
+        }
         public static bool ValidateExcelData(string filePath, string sheetName, int expectedTotal, int expectedCurrentMonthRevenue)
         {
             try
             {
-                DataTable excelData = ReadExcel(filePath);
+                DataTable excelData = ReadExcel(filePath,0);
                 if (excelData == null) return false;
 
                 int sum = 0;
@@ -78,7 +103,7 @@ namespace Test_QuocCuong
                         }
                     }
                 }
-
+                Console.WriteLine(sum +" "+ expectedTotal + " "+ currentMonthRevenue + " " + expectedCurrentMonthRevenue);
                 return sum == expectedTotal && currentMonthRevenue == expectedCurrentMonthRevenue;
             }
             catch
@@ -91,7 +116,7 @@ namespace Test_QuocCuong
         {
             try
             {
-                DataTable excelData = ReadExcel(filePath);
+                DataTable excelData = ReadExcel(filePath,0);
                 if (excelData == null)
                 {
                     return false;
@@ -134,7 +159,7 @@ namespace Test_QuocCuong
         {
             try
             {
-                DataTable excelData = ReadExcel(filePath);
+                DataTable excelData = ReadExcel(filePath,0);
 
                 if (excelData == null || excelData.Columns.Count < expectedCot.Length)
                 {
@@ -167,7 +192,7 @@ namespace Test_QuocCuong
         {
             rowIndex = start;
             var testCases = new List<TestCaseData>();
-            DataTable excelDataTable = ReadExcel("C:\\Users\\thanh\\source\\repos\\Lab06\\Lab06\\bin\\Debug\\net8.0\\TestCase_BDCLPM_HK2.xlsx");
+            DataTable excelDataTable = ReadExcel("C:\\Users\\thanh\\source\\repos\\Lab06\\Lab06\\bin\\Debug\\net8.0\\TestCase_BDCLPM_HK2.xlsx",3);
             for (int i = start - 1; i < end; i++)
             {
                 var testData = excelDataTable.Rows[i][4];
@@ -176,6 +201,16 @@ namespace Test_QuocCuong
             }
             return testCases;
         }
+        public static TestCaseData GetCusAcc(int row)
+        {
+            DataTable excelDataTable = ReadExcel("C:\\Users\\thanh\\source\\repos\\Lab06\\Lab06\\bin\\Debug\\net8.0\\TestCase_BDCLPM_HK2.xlsx", 6);
+
+            var testData = excelDataTable.Rows[row - 1][8];
+            var exp = excelDataTable.Rows[row - 1][9];
+
+            return new TestCaseData(testData, exp);
+        }
+
 
         private static int colIndexActual = 7;
         public static void WriteResultToExcell(string filePath, string sheetName, string actual, string result)

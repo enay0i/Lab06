@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.DevTools.V131.FedCm;
 using OpenQA.Selenium.Interactions;
 using OpenQA.Selenium.Support.UI;
 using SeleniumExtras.WaitHelpers;
@@ -17,11 +18,13 @@ namespace AutomationExerciseTests
     {
         private IWebDriver driver;
         string root = AppDomain.CurrentDomain.BaseDirectory;
+
         string[] expectedHeaders = { "Họ Tên", "Tên Khách Sạn", "Email", "Số Điện Thoại", "Ngày Sinh", "Giới Tính", "Phương Thức Thanh Toán", "Ngày Check-in", "Ngày Check-out", "Tổng Giá", "Tổng Số Phòng", "Trạng Thái Hóa Đơn" };
         [SetUp]
         public void Setup()
         {
             ChromeOptions options = new ChromeOptions();
+
             options.AddUserProfilePreference("download.default_directory", root);
             options.AddUserProfilePreference("download.prompt_for_download", false);
             options.AddUserProfilePreference("download.directory_upgrade", true);
@@ -31,7 +34,7 @@ namespace AutomationExerciseTests
             options.AddArgument("--disable-infobars");
             options.AddArgument("--disable-password-manager-reauthentication");
             options.AddArgument("--password-store=basic");
-            options.AddArgument("--incognito");
+           options.AddArgument("--incognito");
             string filePath = Path.Combine(root, "HoaDon.xlsx");
             string filePathh = Path.Combine(root, "BaoCaoDoanhThu.xlsx");
             driver = new ChromeDriver(options);
@@ -57,7 +60,6 @@ namespace AutomationExerciseTests
 
         public void ActiveCustomer()
         {
-            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
             IWebElement cusTab = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[1]/a[3]/div[1]/*[name()='svg'][1]"));
             cusTab.Click();
             Thread.Sleep(2000);
@@ -76,8 +78,9 @@ namespace AutomationExerciseTests
             string path = Path.Combine(root, "TestCase_BDCLPM_HK2.xlsx");
             ExcelProvider.WriteResultToExcel(path, "TestCase_QuocCuong", 13, actual, result);
             deActivate.Click() ;
-            btnAccept = driver.FindElement(By.XPath("/html[1]/body[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/button[2]"));
-            btnAccept.Click();
+            Thread.Sleep(2000);
+            IWebElement  btn = driver.FindElement(By.XPath("/html[1]/body[1]/div[3]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/button[2]"));
+            btn.Click();
             Thread.Sleep(2000);
             deActivate = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[2]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[1]/td[4]/span[1]"));
              a = deActivate.Text == "Đã kích hoạt";
@@ -86,9 +89,7 @@ namespace AutomationExerciseTests
             ExcelProvider.WriteResultToExcel(path, "TestCase_QuocCuong", 15, actual, result);
             Assert.That(a);
         }
-
         [Test]
-
         public void EX04_TestCase()
         {
             IWebElement mainTab = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[1]/a[1]/div[1]"));
@@ -116,7 +117,7 @@ namespace AutomationExerciseTests
             string result = isValid ? "Passed" : "Failed";
             string path = Path.Combine(root, "TestCase_BDCLPM_HK2.xlsx");
             ExcelProvider.WriteResultToExcel(path, "TestCase_QuocCuong", 36, actual, result);
-            Assert.That(isValid);
+            Assert.IsTrue(isValid, "File Excel hiển thị sai dữ liệu doanh thu.");
         }
         [Test]
 
@@ -159,15 +160,12 @@ namespace AutomationExerciseTests
             });
             Console.WriteLine(total + " tổng số dòng");
             Thread.Sleep(3000);
-
             bool isValid = ExcelProvider.ValidateCustomerData(path, "data", total, firstCusText, lastCusText);
             string actual = isValid ? "File Excel chứa đúng dữ liệu hóa đơn" : "File Excel hiển thị sai";
             string result = isValid ? "Passed" : "Failed";
-
             ExcelProvider.WriteResultToExcel("TestCase_BDCLPM_HK2.xlsx", "TestCase_QuocCuong", 27, actual, result);
             ExcelProvider.WriteResultToExcel("TestCase_BDCLPM_HK2.xlsx", "TestCase_QuocCuong", 30, actual, result);
-
-            Assert.That(isValid);
+            Assert.IsTrue(isValid, "File Excel chứa dữ liệu hóa đơn không chính xác.");
         }
         [Test]
 
@@ -179,17 +177,77 @@ namespace AutomationExerciseTests
             IWebElement btnExport = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[2]/div[1]/div[2]/div[1]/button[1]"));
             btnExport.Click();
             string path = Path.Combine(root, "HoaDon.xlsx");
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = path,
-                UseShellExecute = true
-            });
             Thread.Sleep(3000);
             bool isValid = ExcelProvider.ValidateEmptyCustomerData(path, "data", expectedHeaders);
             string actual = isValid ? "File excel không có thông tin của 1 dòng hóa đơn bất kỳ" : "File Excel hiển thị sai";
             string result = isValid ? "Passed" : "Failed";
             ExcelProvider.WriteResultToExcel("TestCase_BDCLPM_HK2.xlsx", "TestCase_QuocCuong", 33, actual, result);
-            Assert.IsTrue(true);
+            Assert.IsTrue(isValid, "File Excel chứa dữ liệu hóa đơn không chính xác.");
+        }
+        private static IEnumerable<TestCaseData> GetCus_Test()
+        {
+            yield return ExcelProvider.GetCusAcc(4);
+        }
+        private static CustomerInfo FormatCus(string dataTest)
+        {
+            var lines = dataTest.Split('\n');
+
+            return new CustomerInfo
+            {
+                Email = lines[0].Split(':')[1].Trim() ?? "",
+                Password = lines[1].Split(':')[1].Trim() ?? "",
+                Reason = lines[2].Split(':')[1].Trim() ?? "",
+            };
+        }
+        [Test]
+        [TestCaseSource(nameof(GetCus_Test))]
+        public void TC_IN_01(string datatest, string exp)
+        {
+            WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(5));
+            CustomerInfo account = FormatCus(datatest);
+            Console.WriteLine(account.Email + " adu " + account.Password);
+            IWebElement cusTab = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[1]/a[3]/div[1]/*[name()='svg'][1]"));
+            cusTab.Click();
+            Thread.Sleep(2000);
+            IList<IWebElement> rows = driver.FindElements(By.XPath("//tbody/tr"));
+            int rowIndex = 1;
+            foreach (IWebElement row in rows)
+            {
+                IWebElement emailCell = row.FindElement(By.XPath(".//td[2]"));
+                string emailText = emailCell.Text.Trim();
+                if (emailText == account.Email)
+                {
+                    break;
+                }
+                rowIndex++;
+            }
+            IWebElement deActivate = driver.FindElement(By.XPath($"/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[2]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/table[1]/tbody[1]/tr[{rowIndex}]/td[4]/span[1]"));
+            deActivate.Click();
+            IWebElement txtReason = driver.FindElement(By.XPath("/html[1]/body[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[1]/input[1]"));
+            txtReason.SendKeys(account.Reason);
+            IWebElement btnAccept = driver.FindElement(By.XPath("/html[1]/body[1]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[2]/button[2]"));
+            btnAccept.Click();
+            Thread.Sleep(2000);
+            IWebElement btnCancel = driver.FindElement(By.XPath("/html[1]/body[1]/div[2]/div[1]/div[1]/a[1]/span[1]/*[name()='svg'][1]"));
+            btnCancel.Click();
+            IWebElement avt = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[2]/div[1]/img[1]"));
+            avt.Click();
+            IWebElement logout = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[2]/div[2]/div[2]/p[1]"));
+            logout.Click();
+            IWebElement email = driver.FindElement(By.Name("email"));
+            email.SendKeys(account.Email);
+            IWebElement pass = driver.FindElement(By.Name("password"));
+            pass.SendKeys(account.Password);
+            IWebElement login = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[2]/div[1]/div[1]/div[1]/div[2]/div[1]/div[3]/form[1]/div[3]/div[1]/div[1]/div[1]/div[1]/button[1]"));
+            login.Click();
+            IWebElement notification = wait.Until(ExpectedConditions.ElementIsVisible(By.ClassName("ant-notification-notice-description")));
+            string actual = notification.Text;
+            bool a = actual.Contains(account.Reason);
+            string b = a ? "Passed" : "Failed";
+            ExcelProvider.WriteResultToExcelz("TestCase_BDCLPM_HK2.xlsx", "IntegratedTestCase_QuocCuong", 4, actual, b);
+            Thread.Sleep(2000);
+
+            Assert.That(actual, Does.Contain(account.Reason), $"❌ Thông báo lỗi không chứa '{account.Reason}'. Nội dung thực tế: {actual}");
         }
         private static IEnumerable<TestCaseData> GetDataForVoucher_CreateVoucher_Test()
         {
@@ -209,6 +267,7 @@ namespace AutomationExerciseTests
                 Owner = lines[5].Split(':')[1].Trim() ?? ""
             };
         }
+
         public void GetValueInSelectorAntd(string value, IList<IWebElement> options)
         {
 
@@ -245,6 +304,7 @@ namespace AutomationExerciseTests
         [TestCaseSource(nameof(GetDataForVoucher_CreateVoucher_Test))]
         public void AddVoucher_TestCase(string testdata, string expResult)
         {
+            bool write = false;
             try
             {
                 IWebElement vouTab = driver.FindElement(By.XPath("/html[1]/body[1]/div[1]/div[1]/div[1]/div[1]/div[1]/a[5]"));
@@ -314,13 +374,16 @@ namespace AutomationExerciseTests
                 bool status = actual.Equals(expResult.Trim());
                 string a = status ? "Passed" : "Failed";
                 ExcelProvider.WriteResultToExcell("TestCase_BDCLPM_HK2.xlsx", "TestCase_QuocCuong", actual, a.ToString());
+                write = true;
                 Console.WriteLine("adu " + ExcelProvider.rowIndex);
                 Assert.That(actual, Is.EqualTo(expResult.Trim()), "Thông báo không đúng!");
             }
             catch (Exception ex)
             {
-                ExcelProvider.WriteResultToExcell("TestCase_BDCLPM_HK2.xlsx", "TestCase_QuocCuong", ex.Message, "Failed");
-                Console.WriteLine("Lỗi nhận element");
+                if (!write)
+                {
+                    ExcelProvider.WriteResultToExcell("TestCase_BDCLPM_HK2.xlsx", "TestCase_QuocCuong", "Lỗi element", "Failed");
+                }
                 throw;
             }
         }
